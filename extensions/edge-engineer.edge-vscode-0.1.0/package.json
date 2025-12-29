@@ -1,0 +1,325 @@
+{
+	"name": "edge-vscode",
+	"displayName": "Edge Engineer",
+	"description": "Build and debug EdgeOS applications with Visual Studio Code",
+	"version": "0.1.0",
+	"publisher": "edge-engineer",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/edgeengineer/edge-vscode"
+	},
+	"icon": "resources/icon.png",
+	"engines": {
+		"vscode": "^1.96.0"
+	},
+	"categories": [
+		"Debuggers"
+	],
+	"activationEvents": [
+		"workspaceContains:Package.swift",
+		"onDebug",
+		"onDebugDynamicConfigurations:edge",
+		"onDebugResolve:edge"
+	],
+	"main": "./dist/extension.js",
+	"extensionDependencies": [
+		"swiftlang.swift-vscode"
+	],
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "edge-explorer",
+					"title": "Edge",
+					"icon": "resources/logo.svg"
+				}
+			]
+		},
+		"views": {
+			"edge-explorer": [
+				{
+					"id": "edgeDevices",
+					"name": "Devices"
+				},
+				{
+					"id": "edgeDisks",
+					"name": "Disks"
+				},
+				{
+					"id": "edgeDocumentation",
+					"name": "Documentation"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "edgeDevices.addDevice",
+				"title": "Add Device",
+				"icon": "$(add)"
+			},
+			{
+				"command": "edgeDevices.refreshDevices",
+				"title": "Refresh Devices",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "edgeDevices.deleteDevice",
+				"title": "Remove Device",
+				"icon": "$(trash)"
+			},
+			{
+				"command": "edgeDevices.connectWifi",
+				"title": "Connect to WiFi",
+				"icon": "$(link)"
+			},
+			{
+				"command": "edgeDevices.updateAgent",
+				"title": "Update Agent",
+				"icon": "$(sync)"
+			},
+			{
+				"command": "edgeDevices.selectDevice",
+				"title": "Set as Current Device",
+				"icon": "$(check)"
+			},
+			{
+				"command": "edgeDisks.flashDisk",
+				"title": "Flash Disk",
+				"icon": "$(zap)"
+			},
+			{
+				"command": "edgeDisks.refreshDisks",
+				"title": "Refresh Disks",
+				"icon": "$(refresh)"
+			},
+			{
+				"command": "edge.refreshDebugConfigurations",
+				"title": "Refresh Debug Configurations",
+				"category": "Edge"
+			},
+			{
+				"command": "edge.configureSwiftSdkPath",
+				"title": "Configure Swift SDK Path",
+				"category": "Edge"
+			}
+		],
+		"menus": {
+			"view/title": [
+				{
+					"command": "edgeDevices.addDevice",
+					"when": "view == edgeDevices",
+					"group": "navigation"
+				},
+				{
+					"command": "edgeDevices.refreshDevices",
+					"when": "view == edgeDevices",
+					"group": "navigation"
+				},
+				{
+					"command": "edgeDisks.refreshDisks",
+					"when": "view == edgeDisks",
+					"group": "navigation"
+				}
+			],
+			"view/item/context": [
+				{
+					"command": "edgeDevices.deleteDevice",
+					"when": "view == edgeDevices && viewItem =~ /device/ && viewItem =~ /Custom/",
+					"group": "inline"
+				},
+				{
+					"command": "edgeDevices.updateAgent",
+					"when": "view == edgeDevices && viewItem =~ /device/"
+				},
+				{
+					"command": "edgeDevices.selectDevice",
+					"when": "view == edgeDevices && viewItem =~ /device/ && !(viewItem =~ /current/)",
+					"group": "inline"
+				},
+				{
+					"command": "edgeDisks.flashDisk",
+					"when": "view == edgeDisks && viewItem == disk",
+					"group": "inline"
+				}
+			]
+		},
+		"configuration": {
+			"title": "EdgeOS",
+			"properties": {
+				"edgeos.runtime": {
+					"type": "string",
+					"default": "containerd",
+					"enum": [
+						"containerd",
+						"docker"
+					],
+					"description": "The runtime to use when deploying to EdgeOS. This can be either `containerd` or `docker`"
+				},
+				"edgeos.cliPath": {
+					"type": "string",
+					"default": "",
+					"description": "Path to the Edge CLI executable. Leave empty for automatic detection."
+				},
+				"edgeos.swiftSdkPath": {
+					"type": "string",
+					"default": "~/.swiftpm/swift-sdks/6.1-RELEASE_edgeos_aarch64.artifactbundle",
+					"description": "Path to the EdgeOS Swift SDK artifact bundle. Required for debugging. This setting will be removed once the Edge CLI is capable of managing the SDK. This MUST point to the installation location of the 6.1-RELEASE_edgeos_aarch64 SDK."
+				},
+				"edgeos.devices": {
+					"type": "array",
+					"default": [],
+					"description": "List of Edge devices",
+					"items": {
+						"type": "object",
+						"properties": {
+							"id": {
+								"type": "string",
+								"description": "Unique identifier for the device"
+							},
+							"address": {
+								"type": "string",
+								"description": "Device address (hostname or hostname:port)"
+							}
+						}
+					}
+				},
+				"edgeos.currentDevice": {
+					"type": "string",
+					"default": null,
+					"description": "ID of the currently selected Edge device"
+				}
+			}
+		},
+		"debuggers": [
+			{
+				"type": "edge",
+				"label": "EdgeOS Debugger",
+				"configurationAttributes": {
+					"attach": {
+						"required": [
+							"target"
+						],
+						"properties": {
+							"target": {
+								"type": "string",
+								"description": "The Swift package target to debug."
+							},
+							"cwd": {
+								"type": "string",
+								"description": "The working directory for the debug session."
+							},
+							"agent": {
+								"type": "string",
+								"description": "The Edge agent address (hostname:port) to connect to."
+							},
+							"preLaunchTask": {
+								"type": "string",
+								"description": "Task to run before starting the debug session."
+							},
+							"initCommands": {
+								"type": "array",
+								"description": "LLDB commands executed upon debugger startup prior to creating the LLDB target.",
+								"items": {
+									"type": "string"
+								}
+							},
+							"attachCommands": {
+								"type": "array",
+								"description": "LLDB commands that execute in place of the standard attach mechanism. Used for custom attach scenarios such as remote debugging.",
+								"items": {
+									"type": "string"
+								}
+							},
+							"preRunCommands": {
+								"type": "array",
+								"description": "LLDB commands executed just before attaching, after the LLDB target has been created.",
+								"items": {
+									"type": "string"
+								}
+							},
+							"stopCommands": {
+								"type": "array",
+								"description": "LLDB commands executed just after each stop.",
+								"items": {
+									"type": "string"
+								}
+							},
+							"gdb-remote-hostname": {
+								"type": "string",
+								"description": "Hostname for remote debugging with GDB protocol."
+							},
+							"gdb-remote-port": {
+								"type": "integer",
+								"description": "Port for remote debugging with GDB protocol."
+							}
+						}
+					}
+				},
+				"initialConfigurations": [
+					{
+						"type": "edge",
+						"request": "attach",
+						"name": "Debug Edge Application",
+						"target": "${workspaceFolderBasename}",
+						"cwd": "${workspaceFolder}"
+					}
+				]
+			}
+		],
+		"taskDefinitions": [
+			{
+				"type": "edge",
+				"required": [
+					"args"
+				],
+				"properties": {
+					"args": {
+						"description": "The arguments to pass to the Edge CLI.",
+						"type": "array",
+						"items": {
+							"type": "string"
+						},
+						"cwd": {
+							"description": "The folder to run the task in.",
+							"type": "string"
+						}
+					}
+				}
+			}
+		]
+	},
+	"scripts": {
+		"vscode:prepublish": "npm run package",
+		"compile": "npm run check-types && npm run lint && node esbuild.js",
+		"watch": "npm-run-all -p watch:*",
+		"watch:esbuild": "node esbuild.js --watch",
+		"watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+		"package": "npm run check-types && npm run lint && node esbuild.js --production",
+		"compile-tests": "tsc -p . --outDir out",
+		"watch-tests": "tsc -p . -w --outDir out",
+		"pretest": "npm run compile-tests && npm run compile && npm run lint",
+		"check-types": "tsc --noEmit",
+		"lint": "eslint src",
+		"test": "vscode-test"
+	},
+	"devDependencies": {
+		"@types/mocha": "^10.0.10",
+		"@types/node": "20.x",
+		"@types/uuid": "^9.0.8",
+		"@typescript-eslint/eslint-plugin": "^8.28.0",
+		"@typescript-eslint/parser": "^8.28.0",
+		"eslint": "^9.23.0",
+		"esbuild": "^0.25.1",
+		"npm-run-all": "^4.1.5",
+		"typescript": "^5.8.2",
+		"@vscode/test-cli": "^0.0.10",
+		"@vscode/test-electron": "^2.4.1",
+		"@types/vscode": "^1.96.0",
+		"uuid": "^11.0.1"
+	},
+	"__metadata": {
+		"installedTimestamp": 1760088734385,
+		"targetPlatform": "undefined",
+		"size": 75342
+	}
+}
